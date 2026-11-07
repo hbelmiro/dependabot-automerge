@@ -1,0 +1,40 @@
+name: 'Dependabot Auto-merge'
+description: 'Enables auto-merge on Dependabot pull requests so they merge once checks pass.'
+author: 'hbelmiro'
+
+branding:
+  icon: 'git-merge'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'Token used to enable auto-merge'
+    required: false
+    default: ${{ github.token }}
+  merge-method:
+    description: 'Merge method: merge, squash, or rebase'
+    required: false
+    default: 'merge'
+  retry-on-error:
+    description: 'Retry with exponential backoff when the merge command fails (e.g. concurrent Dependabot PRs racing to update the base branch)'
+    required: false
+    default: 'true'
+  max-retries:
+    description: 'Maximum number of retries (total attempts = max-retries + 1); delay doubles each attempt starting at 5s'
+    required: false
+    default: '5'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Enable auto-merge for Dependabot PRs
+      shell: bash
+      run: ${{ github.action_path }}/scripts/merge.sh
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MERGE_METHOD: ${{ inputs.merge-method }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        ACTOR: ${{ github.actor }}
+        EVENT_NAME: ${{ github.event_name }}
+        RETRY_ON_ERROR: ${{ inputs.retry-on-error }}
+        MAX_RETRIES: ${{ inputs.max-retries }}

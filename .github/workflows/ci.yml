@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run actionlint
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install bats
+        run: |
+          curl -sL https://github.com/bats-core/bats-core/archive/refs/tags/v1.14.0.tar.gz | tar xz
+          sudo mv bats-core-1.14.0 /opt/bats
+          echo "/opt/bats/bin" >> "$GITHUB_PATH"
+      - name: Run tests
+        run: bats tests/
+
+  dependabot:
+    name: Dependabot Auto-merge
+    needs: [ lint, test ]
+    runs-on: ubuntu-26.04
+    if: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./

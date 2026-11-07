@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run actionlint
-        uses: raven-actions/actionlint@789059c543ab20522fb3e7240794e13b0f69ad67 # v1
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
       - name: Run shellcheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
 

@@ -14,6 +14,7 @@ setup() {
   export ACTOR='dependabot[bot]'
   export EVENT_NAME='pull_request'
   export MERGE_METHOD='merge'
+  export DELETE_BRANCH='false'
   export RETRY_ON_ERROR='false'
   export MAX_RETRIES='5'
   export PR_URL='https://github.com/o/r/pull/1'
@@ -35,7 +36,7 @@ mock_gh() {
   local fails="$1"
   cat > "${STUB_DIR}/gh" <<EOF
 #!/usr/bin/env bash
-echo "gh:pr merge --auto --\${MERGE_METHOD} \${PR_URL}" >> "\${LOG}"
+echo "gh:\$*" >> "\${LOG}"
 if [[ ! -f "${TEST_TMP}/count" ]]; then echo 0 > "${TEST_TMP}/count"; fi
 count=\$(cat "${TEST_TMP}/count")
 count=\$((count + 1))
@@ -84,6 +85,56 @@ EOF
   run scripts/merge.sh
   [ "$status" -ne 0 ]
   [[ "$output" == *"max-retries"* ]]
+}
+
+@test "rejects invalid delete-branch" {
+  export DELETE_BRANCH='yes'
+  run scripts/merge.sh
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"delete-branch"* ]]
+}
+
+@test "rejects unset delete-branch" {
+  unset DELETE_BRANCH
+  run scripts/merge.sh
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"::error::delete-branch must be 'true' or 'false'"* ]]
+}
+
+@test "does not pass --delete-branch when false" {
+  mock_gh 0
+  run scripts/merge.sh
+  [ "$status" -eq 0 ]
+  grep -q '^gh:pr merge --auto --merge https://github.com/o/r/pull/1$' "${LOG}"
+}
+
+@test "passes --delete-branch when enabled" {
+  mock_gh 0
+  export DELETE_BRANCH='true'
+  run scripts/merge.sh
+  [ "$status" -eq 0 ]
+  grep -q '^gh:pr merge --auto --merge --delete-branch https://github.com/o/r/pull/1$' "${LOG}"
+}
+
+@test "passes --delete-branch with non-default merge method" {
+  mock_gh 0
+  export DELETE_BRANCH='true'
+  export MERGE_METHOD='squash'
+  run scripts/merge.sh
+  [ "$status" -eq 0 ]
+  grep -q '^gh:pr merge --auto --squash --delete-branch https://github.com/o/r/pull/1$' "${LOG}"
+}
+
+@test "keeps --delete-branch on every retry attempt" {
+  mock_gh 2
+  export DELETE_BRANCH='true'
+  export RETRY_ON_ERROR='true'
+  export MAX_RETRIES='5'
+  run scripts/merge.sh
+  [ "$status" -eq 0 ]
+  # all 3 gh calls (2 failures + 1 success) must carry the flag
+  [ "$(grep -c '^gh:pr merge --auto --merge --delete-branch ' "${LOG}")" -eq 3 ]
+  [ "$(grep -c '^gh:' "${LOG}")" -eq 3 ]
 }
 
 @test "merges successfully on first attempt" {

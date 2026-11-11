@@ -15,6 +15,10 @@ inputs:
     description: 'Merge method: merge, squash, or rebase'
     required: false
     default: 'merge'
+  delete-branch:
+    description: 'Delete the pull request branch after merge'
+    required: false
+    default: 'false'
   retry-on-error:
     description: 'Retry with exponential backoff when the merge command fails (e.g. concurrent Dependabot PRs racing to update the base branch)'
     required: false
@@ -33,6 +37,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         MERGE_METHOD: ${{ inputs.merge-method }}
+        DELETE_BRANCH: ${{ inputs.delete-branch }}
         PR_URL: ${{ github.event.pull_request.html_url }}
         ACTOR: ${{ github.actor }}
         EVENT_NAME: ${{ github.event_name }}

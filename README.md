@@ -36,6 +36,7 @@ That's it — the action checks `github.actor` itself and does nothing on PRs th
 |-------|----------|---------|-------------|
 | `github-token` | no | `github.token` | Token used to enable auto-merge. |
 | `merge-method` | no | `merge` | Merge method: `merge`, `squash`, or `rebase`. |
+| `delete-branch` | no | `false` | Delete the pull request branch after merge. |
 | `retry-on-error` | no | `true` | Retry with exponential backoff when the merge command fails (e.g. concurrent Dependabot PRs racing to update the base branch). |
 | `max-retries` | no | `5` | Maximum number of retries (total attempts = `max-retries` + 1). The delay doubles each attempt, starting at 5s. |
 
@@ -46,6 +47,7 @@ steps:
   - uses: hbelmiro/dependabot-automerge@v1
     with:
       merge-method: squash
+      delete-branch: true
       retry-on-error: true
       max-retries: 3
 ```

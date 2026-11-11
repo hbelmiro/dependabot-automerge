@@ -11,6 +11,11 @@ if [[ ! "${MERGE_METHOD:-}" =~ ^(merge|squash|rebase)$ ]]; then
   exit 1
 fi
 
+if [[ "${DELETE_BRANCH:-}" != "true" && "${DELETE_BRANCH:-}" != "false" ]]; then
+  echo "::error::delete-branch must be 'true' or 'false'"
+  exit 1
+fi
+
 if [[ "${RETRY_ON_ERROR:-}" != "true" && "${RETRY_ON_ERROR:-}" != "false" ]]; then
   echo "::error::retry-on-error must be 'true' or 'false'"
   exit 1
@@ -23,7 +28,12 @@ fi
 
 attempt=0
 delay=5
-until gh pr merge --auto --"${MERGE_METHOD}" "${PR_URL}"; do
+merge_args=(--auto "--${MERGE_METHOD}")
+if [[ "${DELETE_BRANCH:-}" == "true" ]]; then
+  merge_args+=(--delete-branch)
+fi
+
+until gh pr merge "${merge_args[@]}" "${PR_URL}"; do
   attempt=$((attempt + 1))
   if [[ "${RETRY_ON_ERROR}" != "true" || "${attempt}" -gt "${MAX_RETRIES}" ]]; then
     echo "::error::gh pr merge failed after ${attempt} attempt(s)"
